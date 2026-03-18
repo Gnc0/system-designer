@@ -42,8 +42,10 @@ def apply_suggestion(prompt_name: str, suggestion: dict) -> dict:
             return {"success": False, "message": "delete 操作必须提供 original 字段"}
         if original not in content:
             return {"success": False, "message": f"未在文件中找到目标句子：\n  {original}"}
-        # 删除该句及其后的换行符
-        new_content = content.replace(original + "\n", "").replace(original, "")
+        # 只删除第一处匹配（含换行符），避免多处误删
+        new_content = content.replace(original + "\n", "", 1)
+        if new_content == content:
+            new_content = content.replace(original, "", 1)
         path.write_text(new_content, encoding="utf-8")
         return {"success": True, "message": f"已删除：{original}"}
 

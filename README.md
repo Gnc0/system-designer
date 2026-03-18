@@ -186,7 +186,8 @@ system designer skill/
 │   ├── system_designer.md             # A1 策划 Agent 的 Prompt（受守护）
 │   ├── requirements_analyzer.md       # A2 需求拆解 Agent 的 Prompt
 │   └── standards_reviewer.md          # A3 规范审查 Agent 的 Prompt
-├── docs/                              # 历史策划文档  
+├── docs/
+│   └── project_doc_index.md           # 项目历史文档目录索引
 ├── data/
 │   ├── images/                        # 用户上传的 UI 参考图（自动保存）
 │   ├── sessions/                      # 完整对话记录 YAML（自动生成）

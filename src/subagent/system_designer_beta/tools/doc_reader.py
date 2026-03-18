@@ -1,20 +1,16 @@
 """
 文档读取工具
 
-从项目策划文档目录读取文件内容。
+从项目历史文档目录读取文件内容。
 文档根目录由 .env 中的 PROJECT_DOC_PATH 控制。
 """
 
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 
 def get_doc_base_path() -> Path:
-    return Path(os.getenv("PROJECT_DOC_PATH", r""))
+    return Path(os.getenv("PROJECT_DOC_PATH", r"D:\Docs\策划\系统文档"))
 
 
 def list_directory(subdir: str = "") -> str:
@@ -58,6 +54,14 @@ def read_file(relative_path: str) -> str:
             return "\n".join(result)
         except ImportError:
             return "需要安装 openpyxl：pip install openpyxl"
+
+    elif suffix == ".docx":
+        try:
+            from docx import Document
+            doc = Document(full_path)
+            return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+        except ImportError:
+            return "需要安装 python-docx：pip install python-docx"
 
     elif suffix in (".md", ".txt"):
         return full_path.read_text(encoding="utf-8")

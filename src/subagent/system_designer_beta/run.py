@@ -74,7 +74,16 @@ def main():
     # 保存出参到 data/test/
     save_test_io(args.agent, input_data, result, timestamp=session_id)
 
+    # 打印结果到 stdout（JSON 格式，用于程序解析）
     print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    # 打印 token 消耗到 stderr（用户可见，不影响 JSON 解析）
+    if "usage" in result:
+        usage = result["usage"]
+        input_tokens = usage.get("input_tokens", 0)
+        output_tokens = usage.get("output_tokens", 0)
+        total_tokens = input_tokens + output_tokens
+        print(f"\n📊 Token 消耗统计：输入 {input_tokens} | 输出 {output_tokens} | 总计 {total_tokens}", file=sys.stderr)
 
 
 if __name__ == "__main__":

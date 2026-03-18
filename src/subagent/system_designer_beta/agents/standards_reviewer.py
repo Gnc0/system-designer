@@ -8,25 +8,23 @@
   review: str     - 审查报告（Markdown 格式）
 """
 
-import os
 import sys
 from pathlib import Path
 from typing import Optional, TypedDict
 
-from dotenv import load_dotenv
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-load_dotenv()
 
-from config import PROMPTS_DIR
+from config import PROMPTS_DIR, make_llm
 
 
 class ReviewerState(TypedDict):
     document: str
     review: Optional[str]
+    input_tokens: int
+    output_tokens: int
 
 
 def review_node(state: ReviewerState) -> ReviewerState:
@@ -42,10 +40,7 @@ def review_node(state: ReviewerState) -> ReviewerState:
 {designer_prompt}
 """
 
-    llm = ChatAnthropic(
-        model="claude-sonnet-4-6",
-        api_key=os.getenv("ANTHROPIC_API_KEY"),
-    )
+    llm = make_llm()
 
     messages = [
         SystemMessage(content=system),
@@ -53,7 +48,18 @@ def review_node(state: ReviewerState) -> ReviewerState:
     ]
 
     response = llm.invoke(messages)
-    return {**state, "review": response.content}
+
+    # 收集 token 使用情况
+    usage = response.response_metadata.get("usage", {})
+    input_tokens = usage.get("input_tokens", 0)
+    output_tokens = usage.get("output_tokens", 0)
+
+    return {
+        **state,
+        "review": response.content,
+        "input_tokens": state.get("input_tokens", 0) + input_tokens,
+        "output_tokens": state.get("output_tokens", 0) + output_tokens,
+    }
 
 
 def build_graph():
@@ -64,7 +70,28 @@ def build_graph():
     return graph.compile()
 
 
+_app = None
+
+
+def _get_app():
+    global _app
+    if _app is None:
+        _app = build_graph()
+    return _app
+
+
 def run(input_data: dict) -> dict:
-    app = build_graph()
-    result = app.invoke({"document": input_data.get("document", ""), "review": None})
-    return {"review": result["review"]}
+    app = _get_app()
+    result = app.invoke({
+        "document": input_data.get("document", ""),
+        "review": None,
+        "input_tokens": 0,
+        "output_tokens": 0,
+    })
+    return {
+        "review": result["review"],
+        "usage": {
+            "input_tokens": result.get("input_tokens", 0),
+            "output_tokens": result.get("output_tokens", 0),
+        }
+    }

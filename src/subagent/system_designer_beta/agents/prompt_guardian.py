@@ -11,23 +11,16 @@ Prompt 守护 Agent（A5）
 """
 
 import json
-import os
 import sys
 from pathlib import Path
 from typing import List, Optional, TypedDict
 
-from dotenv import load_dotenv
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-load_dotenv()
 
-from config import PROMPTS_DIR, SKILL_ROOT
-
-# 从 prompts 目录读取 Guardian 系统提示词
-GUARDIAN_SYSTEM = (SKILL_ROOT / "prompts" / "prompt_guardian.md").read_text(encoding="utf-8")
+from config import PROMPTS_DIR, make_llm
 
 
 class GuardianState(TypedDict):
@@ -36,16 +29,16 @@ class GuardianState(TypedDict):
     suggestions: Optional[List[dict]]
     diff_display: Optional[str]
     need_update: bool
+    input_tokens: int
+    output_tokens: int
 
 
 def analyze_node(state: GuardianState) -> GuardianState:
-    llm = ChatAnthropic(
-        model="claude-sonnet-4-6",
-        api_key=os.getenv("ANTHROPIC_API_KEY"),
-    )
+    system_prompt = (PROMPTS_DIR / "prompt_guardian.md").read_text(encoding="utf-8")
+    llm = make_llm()
 
     messages = [
-        SystemMessage(content=GUARDIAN_SYSTEM),
+        SystemMessage(content=system_prompt),
         HumanMessage(
             content=(
                 f"当前系统提示词：\n\n{state['current_prompt']}\n\n"
@@ -56,6 +49,11 @@ def analyze_node(state: GuardianState) -> GuardianState:
     ]
 
     response = llm.invoke(messages)
+
+    # 收集 token 使用情况
+    usage = response.response_metadata.get("usage", {})
+    input_tokens = usage.get("input_tokens", 0)
+    output_tokens = usage.get("output_tokens", 0)
 
     try:
         # 提取 JSON（兼容模型在 JSON 前后输出少量文字的情况）
@@ -89,6 +87,8 @@ def analyze_node(state: GuardianState) -> GuardianState:
         "suggestions": suggestions,
         "diff_display": diff_display,
         "need_update": need_update,
+        "input_tokens": state.get("input_tokens", 0) + input_tokens,
+        "output_tokens": state.get("output_tokens", 0) + output_tokens,
     }
 
 
@@ -100,18 +100,34 @@ def build_graph():
     return graph.compile()
 
 
+_app = None
+
+
+def _get_app():
+    global _app
+    if _app is None:
+        _app = build_graph()
+    return _app
+
+
 def run(input_data: dict) -> dict:
     current_prompt = (PROMPTS_DIR / "system_designer.md").read_text(encoding="utf-8")
-    app = build_graph()
+    app = _get_app()
     result = app.invoke({
         "conversation_summary": input_data.get("conversation_summary", ""),
         "current_prompt": current_prompt,
         "suggestions": None,
         "diff_display": None,
         "need_update": False,
+        "input_tokens": 0,
+        "output_tokens": 0,
     })
     return {
         "need_update": result["need_update"],
         "diff_display": result["diff_display"],
         "suggestions": result.get("suggestions", []),
+        "usage": {
+            "input_tokens": result.get("input_tokens", 0),
+            "output_tokens": result.get("output_tokens", 0),
+        }
     }

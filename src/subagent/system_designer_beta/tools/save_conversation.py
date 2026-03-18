@@ -15,7 +15,7 @@ from pathlib import Path
 import yaml
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from config import DATA_DIR
+from config import DATA_DIR, SKILL_ROOT
 
 
 def save_session(session_data: dict, timestamp: str = None) -> str:
@@ -68,5 +68,4 @@ def save_image(image_bytes: bytes, original_name: str, timestamp: str = None) ->
     filepath.write_bytes(image_bytes)
 
     # 返回相对于 skill root 的路径，供 claude.md 工作流引用
-    from config import SKILL_ROOT
     return str(filepath.relative_to(SKILL_ROOT))

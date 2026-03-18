@@ -11,11 +11,13 @@ venv/
 *.egg-info/
 
 # Claude Code 本地设置
-.claude/settings.local.json
-.vscode
+.claude/
+!.claude/settings.local.json
 
 # 数据目录（自动生成，不纳入版本控制）
 data/images/
 data/sessions/
 data/test/
-docs
+
+docs/
+!docs/project_doc_index.md

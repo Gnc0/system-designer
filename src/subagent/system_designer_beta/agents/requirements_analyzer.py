@@ -10,35 +10,30 @@
 """
 
 import base64
-import os
 import sys
 from pathlib import Path
 from typing import Optional, TypedDict
 
-from dotenv import load_dotenv
-from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-load_dotenv()
 
-from config import PROMPTS_DIR, SKILL_ROOT
+from config import PROMPTS_DIR, SKILL_ROOT, make_llm
+
+from langchain_core.messages import HumanMessage, SystemMessage
 
 
 class RequirementsState(TypedDict):
     image_path: str
     user_description: str
     draft: Optional[str]
+    input_tokens: int
+    output_tokens: int
 
 
 def analyze_image(state: RequirementsState) -> RequirementsState:
     system_prompt = (PROMPTS_DIR / "requirements_analyzer.md").read_text(encoding="utf-8")
-
-    llm = ChatAnthropic(
-        model="claude-sonnet-4-6",
-        api_key=os.getenv("ANTHROPIC_API_KEY"),
-    )
+    llm = make_llm()
 
     content = []
 
@@ -49,7 +44,7 @@ def analyze_image(state: RequirementsState) -> RequirementsState:
         if not image_path.is_absolute():
             image_path = SKILL_ROOT / image_path
         if not image_path.exists():
-            return {**state, "draft": f"错误：图片文件不存在 - {image_path}"}
+            raise FileNotFoundError(f"图片文件不存在: {image_path}")
 
         # 读取图片并编码为 base64
         image_bytes = image_path.read_bytes()
@@ -89,7 +84,18 @@ def analyze_image(state: RequirementsState) -> RequirementsState:
     ]
 
     response = llm.invoke(messages)
-    return {**state, "draft": response.content}
+
+    # 收集 token 使用情况
+    usage = response.response_metadata.get("usage", {})
+    input_tokens = usage.get("input_tokens", 0)
+    output_tokens = usage.get("output_tokens", 0)
+
+    return {
+        **state,
+        "draft": response.content,
+        "input_tokens": state.get("input_tokens", 0) + input_tokens,
+        "output_tokens": state.get("output_tokens", 0) + output_tokens,
+    }
 
 
 def build_graph():
@@ -100,11 +106,29 @@ def build_graph():
     return graph.compile()
 
 
+_app = None
+
+
+def _get_app():
+    global _app
+    if _app is None:
+        _app = build_graph()
+    return _app
+
+
 def run(input_data: dict) -> dict:
-    app = build_graph()
+    app = _get_app()
     result = app.invoke({
         "image_path": input_data.get("image_path", ""),
         "user_description": input_data.get("user_description", ""),
         "draft": None,
+        "input_tokens": 0,
+        "output_tokens": 0,
     })
-    return {"draft": result["draft"]}
+    return {
+        "draft": result["draft"],
+        "usage": {
+            "input_tokens": result.get("input_tokens", 0),
+            "output_tokens": result.get("output_tokens", 0),
+        }
+    }
