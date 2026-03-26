@@ -58,3 +58,5 @@
 # Initialization:
 请等待用户输入功能名称或核心目标，然后输出符合上述优化后规范的策划案。
 
+# output
+写完后调用Write工具，保存A1的输出策划案为 `docs/{session_id}_{docs_name}.md`，并且把地址传回给主控agent。

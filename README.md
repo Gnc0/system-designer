@@ -253,7 +253,7 @@ system designer skill/
 │       ├── config.py                  # 路径配置
 │       ├── agents/                    # 各 Agent 实现
 │       └── tools/                     # 工具函数
-│           ├── session_writer.py      # 会话记录写入工具
+
 │           ├── progress.py            # 进度提示工具
 │           └── ...
 ```

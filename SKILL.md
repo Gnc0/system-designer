@@ -76,9 +76,7 @@ opencode
 - 格式：先输出策划案，再输出「---\n## 规范审查报告」分隔块
 - **审查报告展示后，必须等待用户明确确认**哪些问题需要修改
 
-**Step 5：保存对话记录**
-- 通过 `session_writer.py` 保存完整对话到 `data/sessions/{session_id}.yaml`
-- 所有文本字段必须是对应 Agent 的完整输出原文，禁止摘要或截断
+
 
 **Step 6：调用 Prompt 守护 Agent（A5）**
 - 使用 `sessions_spawn` 调用子代理，传入 `prompts/prompt_guardian.md` 全文作为 System Prompt
@@ -129,4 +127,4 @@ opencode
 - **永远不要**跳过用户对需求 Draft 的确认步骤
 - **所有生成的策划案必须保存到 `docs/` 目录**，文件名格式：`{feature_name}_{session_id}.md`
 - Session ID 格式：`%Y%m%d_%H%M%S`（任务开始时生成一次）
-- 详细执行规范（session_writer 调用方式、messages 填写规范等）请参考 `scaffold/route/CLAUDE.md`
+
