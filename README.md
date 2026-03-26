@@ -23,10 +23,10 @@
 
 | 工具 | 配置文件 | 工具名称 | 安装命令 |
 |------|----------|----------|----------|
-| **Claude Code** | CLAUDE.md | Agent | `npm install -g @anthropic-ai/claude-code` |
-| **OpenCode** | OPENCODE.md | Task | `npm install -g opencode` |
+| **Claude Code** | `CLAUDE.md` | Agent | `npm install -g @anthropic-ai/claude-code` |
+| **OpenCode** | `OPENCODE.md` | Task | `npm install -g opencode` |
 
-> 两种工具的工作流完全相同，只是工具调用方式略有不同。
+> 根目录入口文件会把两种工具分别路由到 `scaffold/route/` 下的对应配置。
 
 ---
 
@@ -220,13 +220,15 @@ Claude Code 会：
 
 ```
 system designer skill/
-├── CLAUDE.md                          # Claude Code Supervisor 工作流配置
-├── OPENCODE.md                        # OpenCode Supervisor 工作流配置
+├── CLAUDE.md                          # 根目录路由入口，分流到 scaffold/route/CLAUDE.md
+├── OPENCODE.md                        # 根目录路由入口，分流到 scaffold/route/OPENCODE.md
 ├── SKILL.md                           # Skill 描述文件
 ├── README.md                          # 本文件
-├── install_opencode.bat               # OpenCode 安装脚本（Windows）
-├── install_opencode.sh                # OpenCode 安装脚本（Linux/macOS）
-├── pytest.ini                         # 测试配置
+├── agent.md                           # OPENCODE/CLAUDE 差异整理
+├── scaffold/
+│   └── route/
+│       ├── CLAUDE.md                  # Claude Code 正式工作流配置
+│       └── OPENCODE.md                # OpenCode 正式工作流配置
 ├── prompts/
 │   ├── system_designer.md             # A1 策划 Agent 的 Prompt（受守护）
 │   ├── requirements_analyzer.md       # A2 需求拆解 Agent 的 Prompt
@@ -235,19 +237,14 @@ system designer skill/
 │   └── prompt_guardian.md             # A5 Prompt 守护 Agent 的 Prompt
 ├── docs/
 │   ├── project_doc_index.md           # 项目历史文档目录索引
-│   └── reference/                     # 转换后的参考文档
+│   ├── analysis/                      # 分析报告等中间产物
+│   └── reference/                     # 转换后的参考文档与逆向草稿
 ├── data/
 │   ├── images/                        # 用户上传的 UI 参考图（自动保存）
 │   ├── sessions/                      # 完整对话记录 YAML（自动生成）
 │   └── test/                          # 调试用传参记录（自动生成）
-├── tests/
-│   ├── conftest.py                    # 测试配置和 fixtures
-│   ├── test_config.py                 # config 模块测试
-│   ├── test_run.py                    # run.py 模块测试
-│   └── test_agents.py                 # agents 模块测试
 ├── src/
 │   ├── xlsx_to_md.py                  # Excel 转 Markdown 工具
-│   ├── opencode_adapter.py            # OpenCode 适配器
 │   └── subagent/system_designer_beta/ # LangGraph Subagent 框架
 │       ├── .env.example               # 环境变量示例
 │       ├── .env                       # 你的本地配置（需自行创建）
@@ -275,7 +272,7 @@ system designer skill/
 确认已在 `src/subagent/system_designer_beta/.env` 中填写了正确的 API Key，且当前终端已激活虚拟环境。
 
 **Q：Claude Code 没有按照预期流程执行？**
-确认是在项目根目录下运行 `claude`，这样 `CLAUDE.md` 才会被自动加载。
+确认是在项目根目录下运行 `claude`，这样根目录 `CLAUDE.md` 才会被自动加载，并继续路由到 `scaffold/route/CLAUDE.md`。
 
 **Q：能否直接运行 run.py？**
 `run.py` 仅用于调试单个 Agent，正常使用请通过 Claude Code 对话驱动，不要直接调用 Python 脚本。

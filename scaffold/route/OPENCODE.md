@@ -1,4 +1,4 @@
-# 系统策划-hzw Skill (OpenCode 版本)
+# 系统策划-hjj Skill (OpenCode 版本)
 
 ## 概述
 本技能为系统策划多智能体工作流。**OpenCode 是 Supervisor**，读取本文件后自主决策调用哪个 Subagent。
@@ -11,7 +11,7 @@
 |------|-------------|----------|
 | 工具名称 | Agent | Task |
 | 子代理类型 | `general-purpose` | `general` |
-| 配置文件 | CLAUDE.md | OPENCODE.md |
+| 配置文件 | `scaffold/route/CLAUDE.md` | `scaffold/route/OPENCODE.md` |
 | 工作流 | 相同 | 相同 |
 
 ## 目录结构
@@ -239,7 +239,7 @@ Task(
 ```
 
 ### 与 Claude Code 的兼容性
-- 本配置文件（OPENCODE.md）与 CLAUDE.md 工作流完全相同
+- 本配置文件（`scaffold/route/OPENCODE.md`）与 `scaffold/route/CLAUDE.md` 工作流完全相同
 - 唯一区别是工具名称和子代理类型参数
 - prompts/ 目录下的文件可以共用
 

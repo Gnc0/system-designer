@@ -8,14 +8,14 @@ description: 项目系统策划多智能体工作流。基于 UI 参考图，自
 项目系统策划多智能体工作流。基于 UI 参考图，自动完成需求拆解、策划案撰写、规范审查的全流程。
 
 > **支持工具**：Claude Code、OpenCode
-> - Claude Code 用户请参考 `CLAUDE.md`
-> - OpenCode 用户请参考 `OPENCODE.md`
+> - Claude Code 从根目录 `CLAUDE.md` 进入，再路由到 `scaffold/route/CLAUDE.md`
+> - OpenCode 从根目录 `OPENCODE.md` 进入，再路由到 `scaffold/route/OPENCODE.md`
 
 ## 工具对比
 
 | 特性 | Claude Code | OpenCode |
 |------|-------------|----------|
-| 配置文件 | CLAUDE.md | OPENCODE.md |
+| 入口文件 | `CLAUDE.md` | `OPENCODE.md` |
 | 工具名称 | Agent | Task |
 | 子代理类型 | `general-purpose` | `general` |
 | 工作流 | 相同 | 相同 |
@@ -27,14 +27,14 @@ description: 项目系统策划多智能体工作流。基于 UI 参考图，自
 ```bash
 # 在项目根目录启动 Claude Code
 claude
-# Claude Code 会自动读取 CLAUDE.md
+# Claude Code 会先读取根目录 CLAUDE.md，再路由到 scaffold/route/CLAUDE.md
 ```
 
 ### OpenCode 用户
 ```bash
 # 在项目根目录启动 OpenCode
 opencode
-# OpenCode 会自动读取 OPENCODE.md
+# OpenCode 会先读取根目录 OPENCODE.md，再路由到 scaffold/route/OPENCODE.md
 ```
 
 ## 工作流程
@@ -112,8 +112,10 @@ opencode
 
 ## 核心文件
 
-- `CLAUDE.md` - Claude Code Supervisor 完整工作流配置
-- `OPENCODE.md` - OpenCode Supervisor 完整工作流配置
+- `CLAUDE.md` - 根目录路由入口，分流到 Claude/OpenCode 对应配置
+- `OPENCODE.md` - OpenCode 根目录路由入口
+- `scaffold/route/CLAUDE.md` - Claude Code Supervisor 完整工作流配置
+- `scaffold/route/OPENCODE.md` - OpenCode Supervisor 完整工作流配置
 - `prompts/system_designer.md` - A1 系统策划 Agent 的 Prompt（受守护）
 - `prompts/requirements_analyzer.md` - A2 需求拆解 Agent 的 Prompt
 - `prompts/standards_reviewer.md` - A3 规范审查 Agent 的 Prompt
@@ -127,4 +129,4 @@ opencode
 - **永远不要**跳过用户对需求 Draft 的确认步骤
 - **所有生成的策划案必须保存到 `docs/` 目录**，文件名格式：`{feature_name}_{session_id}.md`
 - Session ID 格式：`%Y%m%d_%H%M%S`（任务开始时生成一次）
-- 详细执行规范（session_writer 调用方式、messages 填写规范等）请参考 `CLAUDE.md`
+- 详细执行规范（session_writer 调用方式、messages 填写规范等）请参考 `scaffold/route/CLAUDE.md`
