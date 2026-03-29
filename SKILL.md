@@ -1,130 +1,125 @@
 ---
 name: system designer
-description: 项目系统策划多智能体工作流。基于 UI 参考图，自动完成需求拆解、策划案撰写、规范审查的全流程。触发词：写策划案、设计系统、系统设计、策划文档、需求文档、审查策划案、规范审查、修改策划案。
+description: 游戏系统策划多智能体工作流。基于 UI 参考图，自动完成需求拆解、策划案撰写、规范审查的全流程。触发词：写策划案、设计系统、系统设计、策划文档、需求文档、审查策划案、规范审查、修改策划案、逆向需求。
 ---
 
-# System Designer Skill
+# 业务规则
 
-项目系统策划多智能体工作流。基于 UI 参考图，自动完成需求拆解、策划案撰写、规范审查的全流程。
+## 术语
 
-> **支持工具**：Claude Code、OpenCode
-> - Claude Code 从根目录 `CLAUDE.md` 进入，再路由到 `scaffold/route/CLAUDE.md`
-> - OpenCode 从根目录 `OPENCODE.md` 进入，再路由到 `scaffold/route/OPENCODE.md`
+| 术语 | 含义 |
+|------|------|
+| 策划案 | 系统策划文档，描述游戏内功能系统的完整设计 |
+| 需求 Draft | 从 UI 参考图提取的结构化需求草案 |
+| 规范审查 | 对策划案的格式、语言、逻辑进行合规性检查 |
+| 逆向需求 | 从已有策划案还原为标准格式需求 Draft |
+| Prompt 守护 | 自动优化策划 Agent 的 system prompt |
+| session_id | 本次任务的唯一标识，格式 `%Y%m%d_%H%M%S` |
 
-## 工具对比
+## 约束
 
-| 特性 | Claude Code | OpenCode |
-|------|-------------|----------|
-| 入口文件 | `CLAUDE.md` | `OPENCODE.md` |
-| 工具名称 | Agent | Task |
-| 子代理类型 | `general-purpose` | `general` |
-| 工作流 | 相同 | 相同 |
-| Prompt 文件 | 共用 `prompts/` 目录 | 共用 `prompts/` 目录 |
+1. **永远不要**在没有 UI 参考图的情况下开始写策划案（至少需要图片或文字描述之一）
+2. **永远不要**跳过用户对需求 Draft 的确认步骤
+3. **所有子代理通过 agent 名称直接调用**（sd-a1 ~ sd-a5），禁止 read prompt 文件再传入
+4. **所有生成的策划案必须保存到 `docs/` 目录**
+5. **规范审查后如有修改**：必须先经用户确认，再启动子代理用 `edit` 工具编辑策划案文件。禁止由主线程直接修改
 
-## 快速开始
+## 子代理调用
 
-### Claude Code 用户
+- 使用 `subagent` 工具的 SINGLE 模式调用
+- system prompt 由 pi 框架自动注入（`~/.pi/agent/agents/sd-*.md`）
+- `task` 参数只包含用户数据，禁止附加与 agent system prompt 冲突的指令
+
+## Agent 定义
+
+| Agent | 用途 | 内部规范 |
+|-------|------|----------|
+| `sd-a1` | 策划案撰写/修改 | `agents/sd-a1.md`（格式、语言、结构等规范） |
+| `sd-a2` | UI 需求拆解 | `agents/sd-a2.md`（拆解模板） |
+| `sd-a3` | 规范审查 | `agents/sd-a3.md`（审查标准） |
+| `sd-a4` | 逆向需求 | `agents/sd-a4.md`（逆向规则） |
+| `sd-a5` | Prompt 守护 | `agents/sd-a5.md`（守护规则） |
+
+## vision_describe 调用方式
+通过 MCP 服务器将图片转为结构化文字描述，供文本模型理解 UI 图。
+
 ```bash
-# 在项目根目录启动 Claude Code
-claude
-# Claude Code 会先读取根目录 CLAUDE.md，再路由到 scaffold/route/CLAUDE.md
+vision_describe(image_path: "data/images/{session_id}_ref.png")
+vision_describe(image_path: "data/images/{session_id}_ref.png", provider: "kimi", model: "kimi-k2.5")
 ```
 
-### OpenCode 用户
-```bash
-# 在项目根目录启动 OpenCode
-opencode
-# OpenCode 会先读取根目录 OPENCODE.md，再路由到 scaffold/route/OPENCODE.md
+支持的 provider：`kimi` / `moonshot` / `anthropic` / `openai`。
+
+不指定 provider 时按 `config.json` → `VISION_PROVIDER` 环境变量 → 默认值（kimi）。
+
+API Key 优先级：`VISION_API_KEY` 环境变量 > `config.json`。
+
+MCP 服务器需在 pi 的 `settings.json` 中注册（详见 README.md），配置路径指向 `src/vision-describe-mcp/`。
+
+---
+
+# 工作流
+
+## 一、写策划案（主流程）
+
+**Step 1：获取 UI 参考图**
+
+提示语：「请提供该功能的 UI 参考图，可直接在对话中粘贴截图或拖入图片文件。」
+
+**Step 1.5：视觉理解（如需）**
+
+若主控或子代理无法直接理解图片：
+1. 保存图片到 `data/images/{session_id}_ref.png`
+2. `vision_describe(image_path: "data/images/{session_id}_ref.png")`
+3. 将描述文本作为「图片描述」传入后续步骤
+
+**Step 2：调用需求拆解（sd-a2）**
+
+```
+subagent SINGLE: { agent: "sd-a2", task: "以下是用户提供的 UI 参考图描述和说明：\n\n{图片描述}\n\n{用户补充说明}" }
 ```
 
-## 工作流程
+→ 展示 Draft → **等待用户确认** → 保存为 `docs/{session_id}_confirmed_draft.md`
 
-### 一、写策划案（主流程）
+**Step 3：调用策划案撰写（sd-a1）**
 
-**Step 1：获取 UI 参考图或文字描述**
+```
+subagent SINGLE: { agent: "sd-a1", task: "请根据需求文档撰写策划案。需求文档路径：docs/{session_id}_confirmed_draft.md\n\nsession_id: {session_id}\n\n如需查阅项目历史文档，请使用 read 工具读取 docs/project_doc_index.md 中对应的文件。" }
+```
 
-检测到"写策划案"、"帮我设计XX系统"等意图时，按以下流程获取 UI 信息：
+**Step 4：自动调用规范审查（sd-a3）**
 
-**方案A：用户提供 UI 参考图（优先）**
-- 提示语：「请提供该功能的 UI 参考图，可直接在对话中粘贴截图或拖入图片文件。」
-- 收到图片后，保存到 `data/images/{session_id}_{原始文件名或 ref.png}`
-- 进入 Step 2
+```
+subagent SINGLE: { agent: "sd-a3", task: "请审查以下策划案：docs/{session_id}_{docs_name}.md" }
+```
 
-**方案B：用户选择文字描述（备选）**
-- 如果用户说「没有参考图」或「用文字描述」，进入文字描述模式
-- 提示语：「请用文字描述你想要的 UI 布局和功能，我会帮你生成 UI 参考图。」
-- 用户提供文字描述后，调用 AI 生成 UI 参考图详细描述
-- 将生成的 UI 描述保存到 `data/images/{session_id}_ai_generated_ui.md`
-- 进入 Step 2
+→ 展示审查报告 → **等待用户确认修改项**
 
-**Step 2：调用需求拆解 Agent（A2）**
-- 使用 `sessions_spawn` 调用子代理，传入 `prompts/requirements_analyzer.md` 全文作为 System Prompt
-- 将图片描述和用户说明作为用户输入传入
-- 将输出的需求 Draft **完整展示**给用户
-- **必须等待用户明确确认**（「确认」或「修改如下：...」），不得跳过此步骤
+**Step 5：调用 Prompt 守护（sd-a5）**
 
-**Step 3：调用系统策划 Agent（A1）**
-- 使用 `sessions_spawn` 调用子代理，传入 `prompts/system_designer.md` 全文作为 System Prompt
-- 将 confirmed_draft 作为用户输入传入
-- 如需查阅项目历史文档，参考 `docs/project_doc_index.md`
-- 输出：完整策划案文档
+```
+subagent SINGLE: { agent: "sd-a5", task: "本次对话摘要：\n\n{对话要点摘要}" }
+```
 
-**Step 4：自动调用规范审查 Agent（A3）**
-- 使用 `sessions_spawn` 调用子代理，传入 `prompts/standards_reviewer.md` 全文作为 System Prompt
-- 将策划案作为用户输入传入
-- 将审查结果附在策划案后展示
-- 格式：先输出策划案，再输出「---\n## 规范审查报告」分隔块
-- **审查报告展示后，必须等待用户明确确认**哪些问题需要修改
+→ 如有建议，展示 diff → **等待用户确认** → 执行建议（由sd-a5控制原子操作）
 
+## 二、审查策划案
 
+```
+subagent SINGLE: { agent: "sd-a3", task: "请审查以下策划案内容：\n\n{用户粘贴的策划案}" }
+```
 
-**Step 6：调用 Prompt 守护 Agent（A5）**
-- 使用 `sessions_spawn` 调用子代理，传入 `prompts/prompt_guardian.md` 全文作为 System Prompt
-- 若 A5 建议更新，将 diff 完整展示给用户，等待文字确认
-- 每次只执行一条建议，每条建议只涉及一句话（原子操作）
+## 三、修改策划案
 
-### 二、审查策划案
+```
+subagent SINGLE: { agent: "sd-a1", task: "请修改策划案 docs/{session_id}_{docs_name}.md，修改要求：\n\n{用户修改意见}\n\n请使用 edit 工具直接编辑该文件，逐一修正后输出修改摘要。" }
+```
 
-当用户说「帮我审查这份策划案」时：
-1. 要求用户粘贴策划案内容
-2. 直接调用 A3（跳过 A1、A2）
-3. 展示审查报告
-4. 保存对话到 `data/sessions/{session_id}.yaml`
+修改后自动调用 A3 审查。
 
-### 三、修改策划案
+## 四、逆向需求
 
-当用户说「修改XXX」时：
-1. 将原策划案 + 修改意见合并，传给 A1
-2. A1 输出修改后版本
-3. 自动调用 A3 审查
-4. 保存 YAML
-
-### 四、逆向需求
-
-当用户说「逆向需求」、「从策划案还原需求」等意图时：
-1. 读取 `docs/project_doc_index.md`，找到对应文档路径
-2. 调用 A4（`prompts/reverse_requirements.md`）生成逆向需求 Draft
-3. 自动调用 A1 生成标准格式策划案
-4. 自动调用 A3 规范审查
-5. 保存对话记录（workflow: "reverse"）
-
-## 核心文件
-
-- `CLAUDE.md` - 根目录路由入口，分流到 Claude/OpenCode 对应配置
-- `OPENCODE.md` - OpenCode 根目录路由入口
-- `scaffold/route/CLAUDE.md` - Claude Code Supervisor 完整工作流配置
-- `scaffold/route/OPENCODE.md` - OpenCode Supervisor 完整工作流配置
-- `prompts/system_designer.md` - A1 系统策划 Agent 的 Prompt（受守护）
-- `prompts/requirements_analyzer.md` - A2 需求拆解 Agent 的 Prompt
-- `prompts/standards_reviewer.md` - A3 规范审查 Agent 的 Prompt
-- `prompts/reverse_requirements.md` - A4 逆向需求 Agent 的 Prompt
-- `prompts/prompt_guardian.md` - A5 Prompt 守护 Agent 的 Prompt
-- `docs/project_doc_index.md` - 项目历史文档目录索引
-
-## 注意事项
-
-- **永远不要**在没有 UI 参考图或文字描述的情况下开始写策划案（至少需要其中一种）
-- **永远不要**跳过用户对需求 Draft 的确认步骤
-- **所有生成的策划案必须保存到 `docs/` 目录**，文件名格式：`{feature_name}_{session_id}.md`
-- Session ID 格式：`%Y%m%d_%H%M%S`（任务开始时生成一次）
-
+1. 读取 `docs/project_doc_index.md` 查找文档（`.xlsx` 用 `src/xlsx_to_md.py` 转换）
+2. `subagent SINGLE: { agent: "sd-a4", task: "请将以下策划案逆向拆解为需求 Draft：\n\n{策划案文本}" }`
+3. 取 Part 1（`---` 之前）→ `subagent SINGLE: { agent: "sd-a1", task: "请根据以下需求文档撰写策划案：\n\n{Part 1}\n\nsession_id: {session_id}" }`
+4. 自动调用 A3 审查

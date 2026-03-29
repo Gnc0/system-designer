@@ -1,0 +1,6 @@
+{
+  "provider": "kimi",
+  "model": "kimi-k2.5",
+  "base_url": "https://api.moonshot.cn/v1",
+  "api_key": ""
+}

@@ -1,6 +1,6 @@
 # 环境变量（含 API Key，禁止提交）
 .env
-src/subagent/system_designer_beta/.env
+config.json
 
 # Python
 __pycache__/
@@ -9,6 +9,7 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
+.vscode
 
 # Claude Code 本地设置
 .claude/
