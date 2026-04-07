@@ -1,6 +1,7 @@
 # System Designer
 
 游戏系统策划多智能体工作流。基于 UI 参考图，自动完成需求拆解、策划案撰写、规范审查的全流程。
+本项目基于pi-mono构建，如需在claude code、opencode等脚手架运行，需要迁移技能，并且处理下subagent调用逻辑。
 
 ## 功能
 
