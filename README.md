@@ -49,10 +49,15 @@ system-designer/
 ## Agent 概览
 
 | Agent | 用途 | 内部规范 | 进度 |
+
 |-------|------|----------|
+
 | `sd-writer` | 策划案撰写/修改 | `agents/sd-writer.md`（格式、语言、结构等规范） | 及格，还有很多东西需要微调 |
+
 | `sd-mda` | MDA 需求拆解 | `agents/sd-mda.md`（MDA 拆解规则） | 正式上线，非常给力 |
+
 | `sd-reviewer` | 规范审查 | `agents/sd-reviewer.md`（审查标准） | 不及格，很久没迭代了 |
+
 | `sd-interactive` | 客户端交互需求策划案 | `agents/sd-interactive.md`（交互设计规范） | 完全不及格，试验品 |
 
 ## 安装
