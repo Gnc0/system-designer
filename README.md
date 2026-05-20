@@ -20,7 +20,7 @@ pi (Supervisor)
     ↓ 用户确认
     ↓ sd-writer (策划撰写)
 策划案
-    ↓ sd-review (规范审查)
+    ↓ sd-reviewer (规范审查)
 审查报告
     ↓ 用户确认修改
 最终策划案
@@ -35,7 +35,7 @@ system-designer/
 ├── agents/
 │   ├── sd-writer.md                  ← 策划案撰写/修改 Agent
 │   ├── sd-mda.md                     ← MDA 需求拆解 Agent
-│   ├── sd-review.md                  ← 规范审查 Agent
+│   ├── sd-reviewer.md                  ← 规范审查 Agent
 │   └── sd-interactive.md             ← 客户端交互需求 Agent
 ├── src/vision-describe-mcp/        ← 视觉理解 MCP 服务器
 │   ├── server.py
@@ -52,7 +52,7 @@ system-designer/
 |-------|------|----------|
 | `sd-writer` | 策划案撰写/修改 | `agents/sd-writer.md`（格式、语言、结构等规范） | 及格，还有很多东西需要微调 |
 | `sd-mda` | MDA 需求拆解 | `agents/sd-mda.md`（MDA 拆解规则） | 正式上线，非常给力 |
-| `sd-review` | 规范审查 | `agents/sd-review.md`（审查标准） | 不及格，很久没迭代了 |
+| `sd-reviewer` | 规范审查 | `agents/sd-reviewer.md`（审查标准） | 不及格，很久没迭代了 |
 | `sd-interactive` | 客户端交互需求策划案 | `agents/sd-interactive.md`（交互设计规范） | 完全不及格，试验品 |
 
 ## 安装
@@ -75,11 +75,11 @@ done
 # Windows（管理员 CMD）
 mklink "%USERPROFILE%\.pi\agent\agents\sd-writer.md" "%cd%\agents\sd-writer.md"
 mklink "%USERPROFILE%\.pi\agent\agents\sd-mda.md" "%cd%\agents\sd-mda.md"
-mklink "%USERPROFILE%\.pi\agent\agents\sd-review.md" "%cd%\agents\sd-review.md"
+mklink "%USERPROFILE%\.pi\agent\agents\sd-reviewer.md" "%cd%\agents\sd-reviewer.md"
 mklink "%USERPROFILE%\.pi\agent\agents\sd-interactive.md" "%cd%\agents\sd-interactive.md"
 ```
 
-验证：`subagent { action: "list" }` 应看到 `sd-writer`、`sd-mda`、`sd-review`。
+验证：`subagent { action: "list" }` 应看到 `sd-writer`、`sd-mda`、`sd-reviewer`。
 
 ### 3. 安装视觉 MCP 服务器（可选）
 
@@ -140,7 +140,7 @@ pi：[调用 vision_describe] → [调用 sd-mda 拆解需求] →
      2. 选择充值档位 648 元
      ...
 用户：确认
-pi：[调用 sd-writer 撰写策划案] → [调用 sd-review 规范审查] →
+pi：[调用 sd-writer 撰写策划案] → [调用 sd-reviewer 规范审查] →
      策划案已生成：docs/20250328_103045_充值系统.md
      审查结果：2 处修改建议
 ```

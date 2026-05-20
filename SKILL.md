@@ -18,7 +18,7 @@ description: 游戏系统策划多智能体工作流。基于 UI 参考图，自
 
 1. **永远不要**在没有 UI 参考图的情况下开始写策划案（至少需要图片或文字描述之一）
 2. **永远不要**跳过用户对需求 Draft 的确认步骤
-3. **所有子代理通过 agent 名称直接调用**（sd-writer / sd-mda / sd-review），禁止 read prompt 文件再传入
+3. **所有子代理通过 agent 名称直接调用**（sd-writer / sd-mda / sd-reviewer），禁止 read prompt 文件再传入
 4. **所有生成的策划案必须保存到 `docs/` 目录**
 5. **规范审查后如有修改**：必须先经用户确认，再启动子代理用 `edit` 工具编辑策划案文件。禁止由主线程直接修改
 6. **最小化修改原则**：如果需要修改skill.md，请最小化修改，不要全量优化。
@@ -35,7 +35,7 @@ description: 游戏系统策划多智能体工作流。基于 UI 参考图，自
 |-------|------|----------|
 | `sd-writer` | 策划案撰写/修改 | `agents/sd-writer.md`（格式、语言、结构等规范） |
 | `sd-mda` | MDA 需求拆解 | `agents/sd-mda.md`（MDA 拆解规则） |
-| `sd-review` | 规范审查 | `agents/sd-review.md`（审查标准） |
+| `sd-reviewer` | 规范审查 | `agents/sd-reviewer.md`（审查标准） |
 | `sd-interactive` | 客户端交互需求策划案 | `agents/sd-interactive.md`（交互设计规范） |
 
 ## vision_describe 调用方式
@@ -85,10 +85,10 @@ subagent SINGLE: { agent: "sd-mda", task: "以下是用户提供的 UI 参考图
 subagent SINGLE: { agent: "sd-writer", task: "请根据需求文档撰写策划案。需求文档路径：docs/{session_id}_confirmed_draft.md\n\nsession_id: {session_id}\n\n最后将文件保存为txt文件。" }
 ```
 
-**Step 4：自动调用规范审查（sd-review）**
+**Step 4：自动调用规范审查（sd-reviewer）**
 
 ```
-subagent SINGLE: { agent: "sd-review", task: "请审查以下策划案：docs/{session_id}_{docs_name}.md" }
+subagent SINGLE: { agent: "sd-reviewer", task: "请审查以下策划案：docs/{session_id}_{docs_name}.md" }
 ```
 
 → 展示审查报告 → **等待用户确认修改项**
@@ -96,7 +96,7 @@ subagent SINGLE: { agent: "sd-review", task: "请审查以下策划案：docs/{s
 ## 二、审查策划案
 
 ```
-subagent SINGLE: { agent: "sd-review", task: "请审查以下策划案内容：\n\n{用户粘贴的策划案}" }
+subagent SINGLE: { agent: "sd-reviewer", task: "请审查以下策划案内容：\n\n{用户粘贴的策划案}" }
 ```
 
 ## 三、修改策划案
@@ -105,4 +105,4 @@ subagent SINGLE: { agent: "sd-review", task: "请审查以下策划案内容：\
 subagent SINGLE: { agent: "sd-writer", task: "请修改策划案 docs/{session_id}_{docs_name}.md，修改要求：\n\n{用户修改意见}\n\n请使用 edit 工具直接编辑该文件，逐一修正后输出修改摘要。" }
 ```
 
-修改后自动调用 sd-review 审查。
+修改后自动调用 sd-reviewer 审查。
