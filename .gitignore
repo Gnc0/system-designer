@@ -21,5 +21,5 @@ data/images/
 data/sessions/
 data/test/
 
-docs/
-!docs/project_doc_index.md
+# 任务临时文件（每次任务的过程产物，不入库）
+docs/task/
